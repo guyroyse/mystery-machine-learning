@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -152,6 +153,36 @@ model.fit(X_train, Y_train, epochs = 10, batch_size = 25)
 # evaluate the model
 print()
 model.evaluate(X_test, Y_test)
+
+################################################################################
+# Save: Save the model to something that will work with RedisAI.
+#
+
+from tensorflow import TensorSpec
+from tensorflow.io import write_graph
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+print()
+print(f"Freezing the model:")
+
+# convert the Keras model to a concrete function
+spec = TensorSpec(model.inputs[0].shape, dtype = model.inputs[0].dtype, name = 'x')
+full_model = tf.function(lambda x: model(x)).get_concrete_function(spec)
+
+# freeze that concrete function
+frozen_func = convert_variables_to_constants_v2(full_model)
+frozen_func.graph.as_graph_def()
+
+# save the frozen graph to disk
+write_graph(
+  graph_or_graph_def = frozen_func.graph,
+  logdir = '.',
+  name = 'mystery-machine-learning.pb',
+  as_text = False)
+
+print()
+print(f"Frozen model input node:  {frozen_func.inputs}")
+print(f"Frozen model output node: {frozen_func.outputs}")
 
 ################################################################################
 # Predict: Make some predictions!
