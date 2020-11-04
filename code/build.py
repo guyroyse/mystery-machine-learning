@@ -86,11 +86,6 @@ MAX_LINE_LENGTH = 500
 tokenizer = Tokenizer(num_words = MAX_VOCABULARY)
 tokenizer.fit_on_texts(X_features)
 
-# save the tokenizer to JSON for external use
-with open('tokenizer.json', 'w') as f:
-  f.write(tokenizer.to_json(indent = 2))
-  f.close()
-
 # convert all the lines to an array of sequences
 sequences = tokenizer.texts_to_sequences(X_features)
 
@@ -102,8 +97,12 @@ print(f"Tokenized the features:")
 print(f"  X (features) shape={np.shape(X_features)} type={X_features.dtype}")
 print(f"  Y (labels) shape={np.shape(Y_labels)} type={Y_labels.dtype}")
 
-# save this for later, it converts words to number and back
+# save this for later, it converts words to numbers
 word_index = tokenizer.word_index
+
+with open('word_index.json', 'w') as f:
+  f.write(json.dumps(word_index, indent = 2))
+  f.close()
 
 ################################################################################
 # Test/Train Split: Split the features and labels into test data and training
