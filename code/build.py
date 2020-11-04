@@ -5,6 +5,8 @@ import tensorflow as tf
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+import json
+
 ################################################################################
 # Load: the data from storage and break it into features and labels. Features
 # are the values used make predictions. For us, these are lines from the script.
@@ -40,7 +42,13 @@ from tensorflow.keras.utils import to_categorical
 encoder = LabelEncoder()
 encoder.fit(y_labels)
 
+# save the classes for later user
 classes = encoder.classes_
+
+# save the classes to JSON for external use
+with open('classes.json', 'w') as f:
+  f.write(json.dumps(classes.tolist(), indent = 2))
+  f.close()
 
 print()
 print(f"Setting up label encoder:")
@@ -77,6 +85,11 @@ MAX_LINE_LENGTH = 500
 # build a tokenizer that can convert words to a sequence of integers
 tokenizer = Tokenizer(num_words = MAX_VOCABULARY)
 tokenizer.fit_on_texts(X_features)
+
+# save the tokenizer to JSON for external use
+with open('tokenizer.json', 'w') as f:
+  f.write(tokenizer.to_json(indent = 2))
+  f.close()
 
 # convert all the lines to an array of sequences
 sequences = tokenizer.texts_to_sequences(X_features)
@@ -214,7 +227,7 @@ for line in lines:
   decoded_classes = np.stack([classes, prediction[0]], axis = 1)
 
   print()
-  print(f"  Line: '{line}' likely said by {decoded_class[0]} {encoded_class}")
+  print(f"  Line: '{line}' {word_vector} likely said by {decoded_class[0]} {encoded_class}")
   for index, (character, score) in enumerate(decoded_classes):
     print(f"    {score:.5f} - {character} [{index}]")
 
