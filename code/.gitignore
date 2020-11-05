@@ -1,5 +1,6 @@
 .vscode
 venv
 data/dump.rdb
-*.pb
-*.json
+model/*.pb
+encoders/*.json
+node_modules

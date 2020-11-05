@@ -1,0 +1,11 @@
+{
+  "name": "mystery-machine-learning-server",
+  "version": "0.1.0",
+  "description": "Node server to consume the Mystery Machine Learning model using RedisAI.",
+  "author": "Guy Royse <guy@guyroyse.com>",
+  "private": true,
+  "dependencies": {
+    "express": "^4.17.1",
+    "ioredis": "^4.19.2"
+  }
+}
