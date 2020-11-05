@@ -7,13 +7,16 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import json
 
+TRAINING_DATA = './training-data/scooby-doo-lines.csv'
+CLASSES_JSON = './encoders/classes.json'
+WORD_INDEX_JSON = './encoders/word_index.json'
+MODEL_FILE = './model/mystery-machine-learning.pb'
+
 ################################################################################
 # Load: the data from storage and break it into features and labels. Features
 # are the values used make predictions. For us, these are lines from the script.
 # Labels are the thing to be predicted. For this example, that is the character.
 #
-
-TRAINING_DATA = './scooby-doo-lines.csv'
 
 # load the data from the file
 df = pd.read_csv(TRAINING_DATA)
@@ -46,7 +49,7 @@ encoder.fit(y_labels)
 classes = encoder.classes_
 
 # save the classes to JSON for external use
-with open('classes.json', 'w') as f:
+with open(CLASSES_JSON, 'w') as f:
   f.write(json.dumps(classes.tolist(), indent = 2))
   f.close()
 
@@ -100,7 +103,7 @@ print(f"  Y (labels) shape={np.shape(Y_labels)} type={Y_labels.dtype}")
 # save this for later, it converts words to numbers
 word_index = tokenizer.word_index
 
-with open('word_index.json', 'w') as f:
+with open(WORD_INDEX_JSON, 'w') as f:
   f.write(json.dumps(word_index, indent = 2))
   f.close()
 
@@ -189,7 +192,7 @@ frozen_func.graph.as_graph_def()
 write_graph(
   graph_or_graph_def = frozen_func.graph,
   logdir = '.',
-  name = 'mystery-machine-learning.pb',
+  name = MODEL_FILE,
   as_text = False)
 
 print()

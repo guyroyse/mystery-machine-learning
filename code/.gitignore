@@ -1,5 +1,5 @@
 .vscode
 venv
-data
+data/dump.rdb
 *.pb
 *.json
