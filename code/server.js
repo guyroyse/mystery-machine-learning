@@ -13,7 +13,6 @@ const INPUT_TENSOR_KEY = 'mystery:in'
 const INPUT_TENSOR_TYPE = 'FLOAT'
 
 const OUTPUT_TENSOR_KEY = 'mystery:out'
-const OUTPUT_TENSOR_TYPE = 'FLOAT'
 
 const LINE_LENGTH = 500
 
@@ -84,7 +83,7 @@ async function main() {
     // set the input tensor
     await redis.call(
       'AI.TENSORSET', INPUT_TENSOR_KEY,
-      'FLOAT', ...inputShape,
+      INPUT_TENSOR_TYPE, ...inputShape,
       'VALUES', ...fullyEncodedLine)
 
     // run the model
@@ -95,13 +94,14 @@ async function main() {
   
     // read the output tensor
     let values = await redis.call('AI.TENSORGET', OUTPUT_TENSOR_KEY, 'VALUES')
-    console.log(values)
 
     // decode the results
     let results = values
       .map((score, index) => ({ character: classes[index], score }))
       .sort((a, b) => b.score - a.score)
-  
+
+    console.table(results)
+
     // send the respsonse
     res.send({ line, encodedLine, results })
 

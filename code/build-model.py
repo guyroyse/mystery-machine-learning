@@ -170,36 +170,6 @@ print()
 model.evaluate(X_test, Y_test)
 
 ################################################################################
-# Save: Save the model to something that will work with RedisAI.
-#
-
-from tensorflow import TensorSpec
-from tensorflow.io import write_graph
-from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
-
-print()
-print(f"Freezing the model:")
-
-# convert the Keras model to a concrete function
-spec = TensorSpec(model.inputs[0].shape, dtype = model.inputs[0].dtype, name = 'x')
-full_model = tf.function(lambda x: model(x)).get_concrete_function(spec)
-
-# freeze that concrete function
-frozen_func = convert_variables_to_constants_v2(full_model)
-frozen_func.graph.as_graph_def()
-
-# save the frozen graph to disk
-write_graph(
-  graph_or_graph_def = frozen_func.graph,
-  logdir = '.',
-  name = MODEL_FILE,
-  as_text = False)
-
-print()
-print(f"Frozen model input node:  {frozen_func.inputs}")
-print(f"Frozen model output node: {frozen_func.outputs}")
-
-################################################################################
 # Predict: Make some predictions!
 #
 
@@ -232,5 +202,35 @@ for line in lines:
   print(f"  Line: '{line}' {word_vector} likely said by {decoded_class[0]} {encoded_class}")
   for index, (character, score) in enumerate(decoded_classes):
     print(f"    {score:.5f} - {character} [{index}]")
+
+################################################################################
+# Save: Save the model to something that will work with RedisAI.
+#
+
+from tensorflow import TensorSpec
+from tensorflow.io import write_graph
+from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
+
+print()
+print(f"Freezing the model:")
+
+# convert the Keras model to a concrete function
+spec = TensorSpec(shape = model.inputs[0].shape, dtype = model.inputs[0].dtype)
+full_model = tf.function(lambda x: model(x)).get_concrete_function(spec)
+
+# freeze that concrete function
+frozen_func = convert_variables_to_constants_v2(full_model)
+graph_def = frozen_func.graph.as_graph_def()
+
+# save the frozen graph to disk
+write_graph(
+  graph_or_graph_def = graph_def,
+  logdir = '.',
+  name = MODEL_FILE,
+  as_text = False)
+
+print()
+print(f"Frozen model input node:  {frozen_func.inputs}")
+print(f"Frozen model output node: {frozen_func.outputs}")
 
 print()
