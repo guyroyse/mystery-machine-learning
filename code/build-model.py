@@ -84,7 +84,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 MAX_VOCABULARY = 10000
-MAX_LINE_LENGTH = 500
+MAX_LINE_LENGTH = 150
 
 # build a tokenizer that can convert words to a sequence of integers
 tokenizer = Tokenizer(num_words = MAX_VOCABULARY)

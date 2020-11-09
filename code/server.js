@@ -19,7 +19,7 @@ const INPUT_TENSOR_TYPE = 'FLOAT'
 
 const OUTPUT_TENSOR_KEY = 'mystery:out'
 
-const LINE_LENGTH = 500
+const LINE_LENGTH = 150
 
 const PORT = 3000
 
