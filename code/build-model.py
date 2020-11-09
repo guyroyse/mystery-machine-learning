@@ -245,7 +245,6 @@ write_graph(
   name = TF_MODEL_FILE,
   as_text = False)
 
-print()
 print(f"Frozen model input node:  {frozen_func.inputs}")
 print(f"Frozen model output node: {frozen_func.outputs}")
 
