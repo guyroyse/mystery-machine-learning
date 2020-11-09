@@ -2,12 +2,17 @@ const fs = require('fs').promises
 const Redis = require('ioredis')
 const express = require('express')
 
-const MODEL_PATH = './model/mystery-machine-learning.pb'
-const MODEL_KEY = 'mystery'
-const MODEL_BACKEND = 'TF'
+const TF_MODEL_PATH = './model/mystery-machine-learning.pb'
+const TF_MODEL_KEY = 'mystery:tf'
+const TF_MODEL_BACKEND = 'TF'
+const TF_MODEL_INPUT_NODES = ['x']
+const TF_MODEL_OUTPUT_NODES = ['Identity']
+
+const ONNX_MODEL_PATH = './model/mystery-machine-learning.onnx'
+const ONNX_MODEL_KEY = 'mystery:onnx'
+const ONNX_MODEL_BACKEND = 'ONNX'
+
 const MODEL_DEVICE = 'CPU'
-const MODEL_INPUT_NODES = ['x']
-const MODEL_OUTPUT_NODES = ['Identity']
 
 const INPUT_TENSOR_KEY = 'mystery:in'
 const INPUT_TENSOR_TYPE = 'FLOAT'
@@ -15,7 +20,6 @@ const INPUT_TENSOR_TYPE = 'FLOAT'
 const OUTPUT_TENSOR_KEY = 'mystery:out'
 
 const LINE_LENGTH = 500
-
 
 const PORT = 3000
 
@@ -29,20 +33,34 @@ async function main() {
   app.use(express.json())
 
   // read and load the model
-  console.log("Setting the model in RedisAI...")
-  console.log(`  Path: ${MODEL_PATH}`)
+  console.log("Setting the TensorFlow model in RedisAI...")
+  console.log(`  Path: ${TF_MODEL_PATH}`)
 
   // read the model from the file system
-  let modelBlob = await fs.readFile(MODEL_PATH)
+  let tfModelBlob = await fs.readFile(TF_MODEL_PATH)
 
   // place the model into redis
-  let result = await redis.call(
-    'AI.MODELSET', MODEL_KEY, MODEL_BACKEND, MODEL_DEVICE,
-    'INPUTS', ...MODEL_INPUT_NODES,
-    'OUTPUTS', ...MODEL_OUTPUT_NODES,
-    'BLOB', modelBlob)
+  let tfResult = await redis.call(
+    'AI.MODELSET', TF_MODEL_KEY, TF_MODEL_BACKEND, MODEL_DEVICE,
+    'INPUTS', ...TF_MODEL_INPUT_NODES,
+    'OUTPUTS', ...TF_MODEL_OUTPUT_NODES,
+    'BLOB', tfModelBlob)
   
-  console.log(`  AI.MODELSET result: ${result}`)  
+  console.log(`  AI.MODELSET result: ${tfResult}`)  
+
+  // read and load the model
+  console.log("Setting the ONNX model in RedisAI...")
+  console.log(`  Path: ${ONNX_MODEL_PATH}`)
+
+  // read the model from the file system
+  let onnxModelBlob = await fs.readFile(ONNX_MODEL_PATH)
+
+  // place the model into redis
+  let onnxResult = await redis.call(
+    'AI.MODELSET', ONNX_MODEL_KEY, ONNX_MODEL_BACKEND, MODEL_DEVICE,
+    'BLOB', onnxModelBlob)
+  
+  console.log(`  AI.MODELSET result: ${onnxResult}`)  
 
   // load the word index that maps words to numbers
   let wordIndexText = await fs.readFile('./encoders/word_index.json')
@@ -52,16 +70,15 @@ async function main() {
   let classesText = await fs.readFile('./encoders/classes.json')
   let classes = JSON.parse(classesText)
 
-  // the tensor shapes
+  // the input tensor shape
   let inputShape = [1, LINE_LENGTH]
-  let outputShape = [classes.length]
 
   // set up the routes for express
   console.log("Setting up routes...")
-  app.all('/jinkies', async (req, res) => {
+  app.all('/jinkies/:line', async (req, res) => {
 
     // get the line from the query string
-    let line = req.query.line || ""
+    let line = req.params.line || ""
 
     // encode the line
     let encodedLine = line
@@ -88,7 +105,7 @@ async function main() {
 
     // run the model
     await redis.call(
-      'AI.MODELRUN', MODEL_KEY,
+      'AI.MODELRUN', ONNX_MODEL_KEY,
       'INPUTS', INPUT_TENSOR_KEY,
       'OUTPUTS', OUTPUT_TENSOR_KEY)
   
