@@ -10,7 +10,8 @@ import json
 TRAINING_DATA = './training-data/scooby-doo-lines.csv'
 CLASSES_JSON = './encoders/classes.json'
 WORD_INDEX_JSON = './encoders/word_index.json'
-MODEL_FILE = './model/mystery-machine-learning.pb'
+TF_MODEL_FILE = './model/mystery-machine-learning.pb'
+ONNX_MODEL_FILE = './model/mystery-machine-learning.onnx'
 
 ################################################################################
 # Load: the data from storage and break it into features and labels. Features
@@ -204,7 +205,22 @@ for line in lines:
     print(f"    {score:.5f} - {character} [{index}]")
 
 ################################################################################
-# Save: Save the model to something that will work with RedisAI.
+# Save: Convert the model to ONNX and save.
+#
+
+import keras2onnx
+
+print()
+print(f"Saving an ONNX model:")
+
+# convert
+onnx_model = keras2onnx.convert_keras(model, model.name)
+
+# save
+keras2onnx.save_model(onnx_model, ONNX_MODEL_FILE)
+
+################################################################################
+# Save: Save the model to a frozen TensorFlow model.
 #
 
 from tensorflow import TensorSpec
@@ -212,7 +228,7 @@ from tensorflow.io import write_graph
 from tensorflow.python.framework.convert_to_constants import convert_variables_to_constants_v2
 
 print()
-print(f"Freezing the model:")
+print(f"Saving a frozen TensorFlow model:")
 
 # convert the Keras model to a concrete function
 spec = TensorSpec(shape = model.inputs[0].shape, dtype = model.inputs[0].dtype)
@@ -226,7 +242,7 @@ graph_def = frozen_func.graph.as_graph_def()
 write_graph(
   graph_or_graph_def = graph_def,
   logdir = '.',
-  name = MODEL_FILE,
+  name = TF_MODEL_FILE,
   as_text = False)
 
 print()

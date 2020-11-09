@@ -2,5 +2,6 @@
 venv
 data/dump.rdb
 model/*.pb
+model/*.onnx
 encoders/*.json
 node_modules
