@@ -75,9 +75,10 @@ async function main() {
 
   // set up the routes for express
   console.log("Setting up routes...")
-  app.all('/jinkies/:line', async (req, res) => {
+  app.get('/jinkies/:backend/:line', async (req, res) => {
 
     // get the line from the query string
+    let backend = req.params.backend.toLowerCase()
     let line = req.params.line || ""
 
     // encode the line
@@ -95,7 +96,7 @@ async function main() {
     let padding = new Array(paddingLength).fill().map(_ => 0)
 
     // concat the words and the padding to fully encode the line
-    let fullyEncodedLine = encodedLine.concat(padding)
+    let fullyEncodedLine = padding.concat(encodedLine)
 
     // set the input tensor
     await redis.call(
@@ -103,24 +104,37 @@ async function main() {
       INPUT_TENSOR_TYPE, ...inputShape,
       'VALUES', ...fullyEncodedLine)
 
-    // run the model
-    await redis.call(
-      'AI.MODELRUN', ONNX_MODEL_KEY,
-      'INPUTS', INPUT_TENSOR_KEY,
-      'OUTPUTS', OUTPUT_TENSOR_KEY)
+    // run the model for ONNX
+    if (backend === 'onnx') {
+      await redis.call(
+        'AI.MODELRUN', ONNX_MODEL_KEY,
+        'INPUTS', INPUT_TENSOR_KEY,
+        'OUTPUTS', OUTPUT_TENSOR_KEY)  
+    }
+  
+    // run the model for TF
+    if (backend === 'tf') {
+      await redis.call(
+        'AI.MODELRUN', TF_MODEL_KEY,
+        'INPUTS', INPUT_TENSOR_KEY,
+        'OUTPUTS', OUTPUT_TENSOR_KEY)  
+    }
   
     // read the output tensor
     let values = await redis.call('AI.TENSORGET', OUTPUT_TENSOR_KEY, 'VALUES')
 
     // decode the results
     let results = values
-      .map((score, index) => ({ character: classes[index], score }))
+      .map((score, index) => ({ encodedClass: index, decodedClass: classes[index], score }))
       .sort((a, b) => b.score - a.score)
+
+    // select the winner
+    let winner = results[0]
 
     console.table(results)
 
     // send the respsonse
-    res.send({ line, encodedLine, results })
+    res.send({ winner, results, line, encodedLine, fullyEncodedLine })
 
   })
 

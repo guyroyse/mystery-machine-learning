@@ -201,6 +201,7 @@ for line in lines:
 
   print()
   print(f"  Line: '{line}' {word_vector} likely said by {decoded_class[0]} {encoded_class}")
+  print(f"  Sequence: {sequence}")
   for index, (character, score) in enumerate(decoded_classes):
     print(f"    {score:.5f} - {character} [{index}]")
 
