@@ -2,6 +2,8 @@ const fs = require('fs').promises
 const Redis = require('ioredis')
 const express = require('express')
 
+const PORT = 3000
+
 const TF_MODEL_PATH = './model/mystery-machine-learning.pb'
 const TF_MODEL_KEY = 'mystery:tf'
 const TF_MODEL_BACKEND = 'TF'
@@ -14,72 +16,64 @@ const ONNX_MODEL_BACKEND = 'ONNX'
 
 const MODEL_DEVICE = 'CPU'
 
+const MAX_LINE_LENGTH = 150
+
 const INPUT_TENSOR_KEY = 'mystery:in'
 const INPUT_TENSOR_TYPE = 'FLOAT'
+const INPUT_TENSOR_SHAPE = [1, MAX_LINE_LENGTH]
 
 const OUTPUT_TENSOR_KEY = 'mystery:out'
 
-const LINE_LENGTH = 150
-
-const PORT = 3000
+const WORD_INDEX_PATH = './encoders/word_index.json'
+const CLASSES_PATH = './encoders/classes.json'
 
 async function main() {
 
   // connect to redis
   let redis = new Redis()
 
-  // set up express
-  let app = express()
-  app.use(express.json())
-
   // read and load the model
-  console.log("Setting the TensorFlow model in RedisAI...")
-  console.log(`  Path: ${TF_MODEL_PATH}`)
-
-  // read the model from the file system
+  console.log("Setting the models in RedisAI...")
+  
+  // read the models from the file system
+  let onnxModelBlob = await fs.readFile(ONNX_MODEL_PATH)
   let tfModelBlob = await fs.readFile(TF_MODEL_PATH)
+  
+  // place the ONNX model into redis
+  console.log(`  ONNX: ${ONNX_MODEL_PATH}`)
+  let onnxResult = await redis.call(
+    'AI.MODELSET', ONNX_MODEL_KEY, ONNX_MODEL_BACKEND, MODEL_DEVICE,
+    'BLOB', onnxModelBlob)
+    
+  console.log(`  AI.MODELSET result: ${onnxResult}`)
 
-  // place the model into redis
+  // place the TensorFlow model into redis
+  console.log(`  TensorFlow: ${TF_MODEL_PATH}`)
   let tfResult = await redis.call(
     'AI.MODELSET', TF_MODEL_KEY, TF_MODEL_BACKEND, MODEL_DEVICE,
     'INPUTS', ...TF_MODEL_INPUT_NODES,
     'OUTPUTS', ...TF_MODEL_OUTPUT_NODES,
     'BLOB', tfModelBlob)
   
-  console.log(`  AI.MODELSET result: ${tfResult}`)  
-
-  // read and load the model
-  console.log("Setting the ONNX model in RedisAI...")
-  console.log(`  Path: ${ONNX_MODEL_PATH}`)
-
-  // read the model from the file system
-  let onnxModelBlob = await fs.readFile(ONNX_MODEL_PATH)
-
-  // place the model into redis
-  let onnxResult = await redis.call(
-    'AI.MODELSET', ONNX_MODEL_KEY, ONNX_MODEL_BACKEND, MODEL_DEVICE,
-    'BLOB', onnxModelBlob)
-  
-  console.log(`  AI.MODELSET result: ${onnxResult}`)  
+  console.log(`  AI.MODELSET result: ${tfResult}`)
 
   // load the word index that maps words to numbers
-  let wordIndexText = await fs.readFile('./encoders/word_index.json')
-  let wordIndex = JSON.parse(wordIndexText)
+  let wordIndexJson = await fs.readFile(WORD_INDEX_PATH)
+  let wordIndex = JSON.parse(wordIndexJson)
 
   // load the classes for decoding the output
-  let classesText = await fs.readFile('./encoders/classes.json')
-  let classes = JSON.parse(classesText)
+  let classesJson = await fs.readFile(CLASSES_PATH)
+  let classes = JSON.parse(classesJson)
 
-  // the input tensor shape
-  let inputShape = [1, LINE_LENGTH]
-
-  // set up the routes for express
-  console.log("Setting up routes...")
-  app.get('/jinkies/:backend/:line', async (req, res) => {
+  // the request handler for express
+  async function handleRequest(req, res) {
 
     // get the line from the query string
-    let backend = req.params.backend.toLowerCase()
-    let line = req.params.line || ""
+    let backend = (req.query.backend || 'onnx').toLocaleLowerCase()
+    let line = req.query.line || ""
+
+    // error if backend is invalid
+    if (backend !== 'onnx' && backend !== 'tf') throw "Backend must either ONNX or TF"
 
     // encode the line
     let encodedLine = line
@@ -91,20 +85,19 @@ async function main() {
       .map(word => wordIndex[word])     // look up the index of the words
       .map(index => index ? index : 0)  // replace words that are not found with 0
 
-    // get the padding needed to bring it up to LINE_LENGTH
-    let paddingLength = LINE_LENGTH - encodedLine.length
+    // get the padding needed to bring it up to MAX_LINE_LENGTH
+    let paddingLength = MAX_LINE_LENGTH - encodedLine.length
     let padding = new Array(paddingLength).fill().map(_ => 0)
 
-    // concat the words and the padding to fully encode the line
-    let fullyEncodedLine = padding.concat(encodedLine)
+    // concat the paddings and the words to make a full line
+    let paddedAndEncodedLine = padding.concat(encodedLine)
 
     // set the input tensor
     await redis.call(
-      'AI.TENSORSET', INPUT_TENSOR_KEY,
-      INPUT_TENSOR_TYPE, ...inputShape,
-      'VALUES', ...fullyEncodedLine)
+      'AI.TENSORSET', INPUT_TENSOR_KEY, INPUT_TENSOR_TYPE, ...INPUT_TENSOR_SHAPE,
+      'VALUES', ...paddedAndEncodedLine)
 
-    // run the model for ONNX
+    // run the model for ONNX if needed
     if (backend === 'onnx') {
       await redis.call(
         'AI.MODELRUN', ONNX_MODEL_KEY,
@@ -112,7 +105,7 @@ async function main() {
         'OUTPUTS', OUTPUT_TENSOR_KEY)  
     }
   
-    // run the model for TF
+    // run the model for TF if needed
     if (backend === 'tf') {
       await redis.call(
         'AI.MODELRUN', TF_MODEL_KEY,
@@ -125,7 +118,7 @@ async function main() {
 
     // decode the results
     let results = values
-      .map((score, index) => ({ encodedClass: index, decodedClass: classes[index], score }))
+      .map((score, index) => ({ class: index, decodedClass: classes[index], score }))
       .sort((a, b) => b.score - a.score)
 
     // select the winner
@@ -134,9 +127,18 @@ async function main() {
     console.table(results)
 
     // send the respsonse
-    res.send({ winner, results, line, encodedLine, fullyEncodedLine })
+    res.send({ winner, results, line, encodedLine, backend })
+  }
 
-  })
+  // set up express
+  console.log("Setting up express...")
+  let app = express()
+  app.use(express.json())
+
+  // set up routes
+  console.log("Setting up routes...")
+  app.get('/jinkies', handleRequest)
+  app.post('/jinkies', handleRequest)
 
   // start express
   console.log("Starting server...")
