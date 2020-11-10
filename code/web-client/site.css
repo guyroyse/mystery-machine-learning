@@ -1,6 +1,9 @@
 body {
   font-family: 'Architects Daughter';
-  padding-top: 50px;
+  position: absolute;
+  margin: 0;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 header {
@@ -17,10 +20,10 @@ section#input {
   padding-left: 100px;
   float: left;
   text-align: left;
-  background-image: url("Speech-Bubble-Transparent.png");
+  background-image: url("Speech-Bubble.png");
   background-repeat: no-repeat;
-  background-position-y: 75px;
-  background-position-x: 50px;
+  background-position-y: 40px;
+  background-position-x: 33px;
   width: 800px;
 }
 
@@ -34,7 +37,7 @@ select {
   font-family: 'Architects Daughter';
   font-size: 25px;
   width: 640px;
-  margin-top: 75px;
+  margin-top: 115px;
   padding: 5px;
 }
 
@@ -55,4 +58,8 @@ button {
 #character p {
   font-size: 25px;
   text-align: center;
+}
+
+p#unknown img {
+  filter: grayscale(100%) contrast(5%)
 }
