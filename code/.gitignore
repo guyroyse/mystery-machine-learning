@@ -5,3 +5,4 @@ model/*.pb
 model/*.onnx
 encoders/*.json
 node_modules
+.DS_Store

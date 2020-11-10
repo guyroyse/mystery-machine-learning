@@ -1,0 +1,58 @@
+body {
+  font-family: 'Architects Daughter';
+  padding-top: 50px;
+}
+
+header {
+  float: left;
+}
+
+section#character {
+  float: left;
+  padding-left: 50px;
+}
+
+section#input {
+  padding-top: 115px;
+  padding-left: 100px;
+  float: left;
+  text-align: left;
+  background-image: url("Speech-Bubble-Transparent.png");
+  background-repeat: no-repeat;
+  background-position-y: 75px;
+  background-position-x: 50px;
+  width: 800px;
+}
+
+input[type="text"] {
+  font-family: 'Architects Daughter';
+  font-size: 25px;
+  width: 640px;
+}
+
+select {
+  font-family: 'Architects Daughter';
+  font-size: 25px;
+  width: 250px;
+  margin-top: 100px;
+  padding: 5px;
+}
+
+button {
+  font-family: 'Architects Daughter';
+  font-size: 25px;
+  width: 238px;
+  margin-top: 25px;
+  margin-left: 5px;
+  padding: 5px;
+  border-radius: 10px;
+}
+
+#character .hidden {
+  display: none;
+}
+
+#character p {
+  font-size: 25px;
+  text-align: center;
+}
