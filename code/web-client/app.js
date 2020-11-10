@@ -27,7 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
   jinkiesButton.addEventListener('click', () => whoSaidIt())
 
   // allow using enter for convenience
-  lineInput.addEventListener('keyup', (event) => event.key === 'Enter' ? whoSaidIt() : null)
+  lineInput.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+      whoSaidIt()
+    } else {
+      images.forEach(image => image.className = 'hidden')
+      images[images.length  - 1].className = ''
+      characterNameParagraph.textContent = "????????"
+    }
+  })
 
   async function whoSaidIt() {
 
