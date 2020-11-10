@@ -33,16 +33,16 @@ input[type="text"] {
 select {
   font-family: 'Architects Daughter';
   font-size: 25px;
-  width: 250px;
-  margin-top: 100px;
+  width: 640px;
+  margin-top: 75px;
   padding: 5px;
 }
 
 button {
   font-family: 'Architects Daughter';
   font-size: 25px;
-  width: 238px;
-  margin-top: 25px;
+  width: 628px;
+  margin-top: 40px;
   margin-left: 5px;
   padding: 5px;
   border-radius: 10px;
