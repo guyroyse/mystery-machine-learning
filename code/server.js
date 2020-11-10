@@ -1,6 +1,7 @@
 const fs = require('fs').promises
 const Redis = require('ioredis')
 const express = require('express')
+const cors = require('cors')
 
 const PORT = 3000
 
@@ -69,8 +70,8 @@ async function main() {
   async function handleRequest(req, res) {
 
     // get the line from the query string
-    let backend = (req.query.backend || 'onnx').toLocaleLowerCase()
-    let line = req.query.line || ""
+    let backend = (req.body.backend || 'onnx').toLocaleLowerCase()
+    let line = req.body.line || ""
 
     // error if backend is invalid
     if (backend !== 'onnx' && backend !== 'tf') throw "Backend must either ONNX or TF"
@@ -127,17 +128,17 @@ async function main() {
     console.table(results)
 
     // send the respsonse
-    res.send({ winner, results, line, encodedLine, backend })
+    res.json({ winner, results, line, encodedLine, backend })
   }
 
   // set up express
   console.log("Setting up express...")
   let app = express()
   app.use(express.json())
+  app.use(cors())
 
   // set up routes
   console.log("Setting up routes...")
-  app.get('/jinkies', handleRequest)
   app.post('/jinkies', handleRequest)
 
   // start express
