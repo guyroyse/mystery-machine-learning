@@ -200,10 +200,15 @@ for line in lines:
   decoded_classes = np.stack([classes, prediction[0]], axis = 1)
 
   print()
-  print(f"  Line: '{line}' {word_vector} likely said by {decoded_class[0]} {encoded_class}")
-  print(f"  Sequence: {sequence}")
+  print(f"Line: '{line}' {word_vector} likely said by {decoded_class[0]} {encoded_class}")
+  print("Sequence:")
+  print(sequence)
+  print()
+
   for index, (character, score) in enumerate(decoded_classes):
-    print(f"    {score:.5f} - {character} [{index}]")
+    print(f"{score:.5f} - {character} [{index}]")
+
+  print()
 
 ################################################################################
 # Save: Convert the model to ONNX and save.
