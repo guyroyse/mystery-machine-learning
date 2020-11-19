@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
+
+import onnx
 import tensorflow as tf
+import keras2onnx
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -213,8 +216,6 @@ for line in lines:
 ################################################################################
 # Save: Convert the model to ONNX and save.
 #
-
-import keras2onnx
 
 print()
 print(f"Saving an ONNX model:")
