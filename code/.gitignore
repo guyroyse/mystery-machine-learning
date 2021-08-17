@@ -1,5 +1,5 @@
 venv
-data/dump.rdb
+docker/data/dump.rdb
 model/*.pb
 model/*.onnx
 encoders/*.json

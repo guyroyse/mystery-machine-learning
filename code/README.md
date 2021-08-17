@@ -26,9 +26,10 @@ If you need to deactivate the virtual environment:
 
 ## Up and Running with RedisAI
 
-I use Docker to get RedisAI up and running. I'm assuming you can get Docker going on your computer. Once you have, just run the start-redis.sh shell script and it'll pull down and run an image containing RedisAI.
+I use Docker and Docker Compose to get RedisAI up and running. I'm assuming you can get Docker going on your computer. Once you have, just run the following command:
 
-    $ ./start-redis
+    $ cd docker
+    $ docker compose up
 
 And that's it.
 
@@ -56,4 +57,4 @@ Start the Python server:
 
     $ python -m http.server
 
-Browses to http://localhost:8000/. You may get CORS issues due to localhost restrictions. I got around this with Firefox by installing the [CORS Everywhere extension](https://addons.mozilla.org/en-US/firefox/addon/cors-everywhere/). ONLY USE IT FOR LOCAL STUFF. DO NOT LEAVE IT ON. CORS is there for a reason.
+Browse to http://localhost:8000/.

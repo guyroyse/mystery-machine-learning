@@ -43,20 +43,20 @@ async function main() {
   // place the ONNX model into redis
   console.log(`  ONNX: ${ONNX_MODEL_PATH}`)
   let onnxResult = await redis.call(
-    'AI.MODELSET', ONNX_MODEL_KEY, ONNX_MODEL_BACKEND, MODEL_DEVICE,
+    'AI.MODELSTORE', ONNX_MODEL_KEY, ONNX_MODEL_BACKEND, MODEL_DEVICE,
     'BLOB', onnxModelBlob)
     
-  console.log(`  AI.MODELSET result: ${onnxResult}`)
+  console.log(`  AI.MODELSTORE result: ${onnxResult}`)
 
   // place the TensorFlow model into redis
   console.log(`  TensorFlow: ${TF_MODEL_PATH}`)
   let tfResult = await redis.call(
-    'AI.MODELSET', TF_MODEL_KEY, TF_MODEL_BACKEND, MODEL_DEVICE,
-    'INPUTS', ...TF_MODEL_INPUT_NODES,
-    'OUTPUTS', ...TF_MODEL_OUTPUT_NODES,
+    'AI.MODELSTORE', TF_MODEL_KEY, TF_MODEL_BACKEND, MODEL_DEVICE,
+    'INPUTS', TF_MODEL_INPUT_NODES.length, ...TF_MODEL_INPUT_NODES,
+    'OUTPUTS', TF_MODEL_OUTPUT_NODES.length, ...TF_MODEL_OUTPUT_NODES,
     'BLOB', tfModelBlob)
   
-  console.log(`  AI.MODELSET result: ${tfResult}`)
+  console.log(`  AI.MODELSTORE result: ${tfResult}`)
 
   // load the word index that maps words to numbers
   let wordIndexJson = await fs.readFile(WORD_INDEX_PATH)
@@ -101,17 +101,17 @@ async function main() {
     // run the model for ONNX if needed
     if (backend === 'onnx') {
       await redis.call(
-        'AI.MODELRUN', ONNX_MODEL_KEY,
-        'INPUTS', INPUT_TENSOR_KEY,
-        'OUTPUTS', OUTPUT_TENSOR_KEY)  
+        'AI.MODELEXECUTE', ONNX_MODEL_KEY,
+        'INPUTS', 1, INPUT_TENSOR_KEY,
+        'OUTPUTS', 1, OUTPUT_TENSOR_KEY)  
     }
   
     // run the model for TF if needed
     if (backend === 'tf') {
       await redis.call(
-        'AI.MODELRUN', TF_MODEL_KEY,
-        'INPUTS', INPUT_TENSOR_KEY,
-        'OUTPUTS', OUTPUT_TENSOR_KEY)  
+        'AI.MODELEXECUTE', TF_MODEL_KEY,
+        'INPUTS', 1, INPUT_TENSOR_KEY,
+        'OUTPUTS', 1, OUTPUT_TENSOR_KEY)  
     }
   
     // read the output tensor
